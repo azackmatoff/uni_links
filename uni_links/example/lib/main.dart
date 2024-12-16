@@ -24,8 +24,7 @@ class _MyAppState extends State<MyApp> with SingleTickerProviderStateMixin {
 
   final _scaffoldKey = GlobalKey();
   final _cmds = getCmds();
-  final _cmdStyle = const TextStyle(
-      fontFamily: 'Courier', fontSize: 12.0, fontWeight: FontWeight.w700);
+  final _cmdStyle = const TextStyle(fontFamily: 'Courier', fontSize: 12.0, fontWeight: FontWeight.w700);
 
   @override
   void initState() {
@@ -196,7 +195,7 @@ class _MyAppState extends State<MyApp> with SingleTickerProviderStateMixin {
               '(tap on any of the above commands to print it to'
               ' the console/logger and copy to the device clipboard.)',
               textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.caption,
+              style: Theme.of(context).textTheme.titleLarge,
             ),
           ]
         ].expand((el) => el).toList(),
@@ -222,7 +221,7 @@ class _MyAppState extends State<MyApp> with SingleTickerProviderStateMixin {
   }
 
   void _showSnackBar(String msg) {
-    WidgetsBinding.instance?.addPostFrameCallback((_) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
       final context = _scaffoldKey.currentContext;
       if (context != null) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
@@ -239,8 +238,7 @@ List<String>? getCmds() {
 
   const plainPath = 'path/subpath';
   const args = 'path/portion/?uid=123&token=abc';
-  const emojiArgs =
-      '?arr%5b%5d=123&arr%5b%5d=abc&addr=1%20Nowhere%20Rd&addr=Rand%20City%F0%9F%98%82';
+  const emojiArgs = '?arr%5b%5d=123&arr%5b%5d=abc&addr=1%20Nowhere%20Rd&addr=Rand%20City%F0%9F%98%82';
 
   if (kIsWeb) {
     return [
