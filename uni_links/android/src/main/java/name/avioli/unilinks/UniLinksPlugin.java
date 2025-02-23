@@ -13,14 +13,14 @@ import io.flutter.plugin.common.BinaryMessenger;
 import io.flutter.plugin.common.EventChannel;
 import io.flutter.plugin.common.MethodCall;
 import io.flutter.plugin.common.MethodChannel;
-import io.flutter.plugin.common.PluginRegistry;
+
+// migrating the Java code to the Flutter Plugin API v2
 
 public class UniLinksPlugin
         implements FlutterPlugin,
                 MethodChannel.MethodCallHandler,
                 EventChannel.StreamHandler,
-                ActivityAware,
-                PluginRegistry.NewIntentListener {
+                ActivityAware {
 
     private static final String MESSAGES_CHANNEL = "uni_links/messages";
     private static final String EVENTS_CHANNEL = "uni_links/events";
@@ -31,6 +31,7 @@ public class UniLinksPlugin
     private String latestLink;
     private Context context;
     private boolean initialIntent = true;
+    private ActivityPluginBinding activityBinding;
 
     private void handleIntent(Context context, Intent intent) {
         String action = intent.getAction();
@@ -72,27 +73,12 @@ public class UniLinksPlugin
         register(flutterPluginBinding.getBinaryMessenger(), this);
     }
 
-    private static void register(BinaryMessenger messenger, UniLinksPlugin plugin) {
+    private void register(BinaryMessenger messenger, UniLinksPlugin plugin) {
         final MethodChannel methodChannel = new MethodChannel(messenger, MESSAGES_CHANNEL);
         methodChannel.setMethodCallHandler(plugin);
 
         final EventChannel eventChannel = new EventChannel(messenger, EVENTS_CHANNEL);
         eventChannel.setStreamHandler(plugin);
-    }
-
-    /** Plugin registration. */
-    public static void registerWith(@NonNull PluginRegistry.Registrar registrar) {
-        // Detect if we've been launched in background
-        if (registrar.activity() == null) {
-            return;
-        }
-
-        final UniLinksPlugin instance = new UniLinksPlugin();
-        instance.context = registrar.context();
-        register(registrar.messenger(), instance);
-
-        instance.handleIntent(registrar.context(), registrar.activity().getIntent());
-        registrar.addNewIntentListener(instance);
     }
 
     @Override
@@ -120,27 +106,36 @@ public class UniLinksPlugin
     }
 
     @Override
-    public boolean onNewIntent(Intent intent) {
-        this.handleIntent(context, intent);
-        return false;
-    }
-
-    @Override
     public void onAttachedToActivity(@NonNull ActivityPluginBinding activityPluginBinding) {
-        activityPluginBinding.addOnNewIntentListener(this);
+        this.activityBinding = activityPluginBinding;
+        activityPluginBinding.addOnNewIntentListener(this::onNewIntent);
         this.handleIntent(this.context, activityPluginBinding.getActivity().getIntent());
     }
 
     @Override
-    public void onDetachedFromActivityForConfigChanges() {}
+    public void onDetachedFromActivityForConfigChanges() {
+        this.activityBinding.removeOnNewIntentListener(this::onNewIntent);
+        this.activityBinding = null;
+    }
 
     @Override
     public void onReattachedToActivityForConfigChanges(
             @NonNull ActivityPluginBinding activityPluginBinding) {
-        activityPluginBinding.addOnNewIntentListener(this);
+        this.activityBinding = activityPluginBinding;
+        activityPluginBinding.addOnNewIntentListener(this::onNewIntent);
         this.handleIntent(this.context, activityPluginBinding.getActivity().getIntent());
     }
 
     @Override
-    public void onDetachedFromActivity() {}
+    public void onDetachedFromActivity() {
+        if (this.activityBinding != null) {
+            this.activityBinding.removeOnNewIntentListener(this::onNewIntent);
+            this.activityBinding = null;
+        }
+    }
+
+    public boolean onNewIntent(Intent intent) {
+        this.handleIntent(this.context, intent);
+        return false;
+    }
 }
